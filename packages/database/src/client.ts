@@ -1,0 +1,15 @@
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+
+import * as schema from "./schema";
+
+export function createDb(connectionString?: string) {
+  const url = connectionString ?? process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error("DATABASE_URL is required to create a database connection");
+  }
+
+  const pool = new Pool({ connectionString: url });
+  const db = drizzle(pool, { schema });
+  return { db, pool };
+}

@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+  probe:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vpn-probe
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=1
+    environment:
+      - PROBE_ID=${PROBE_ID}
+      - PROBE_REGION=${PROBE_REGION}
+      - CENTRAL_API_URL=${CENTRAL_API_URL}
+      - API_KEY=${API_KEY}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - vpn-credentials:/app/credentials:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - probe-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+
+  redis:
+    image: redis:7-alpine
+    container_name: probe-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - probe-network
+    command: redis-server --appendonly yes --maxmemory 100mb --maxmemory-policy allkeys-lru
+
+  # Optional: Local metrics collection
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: probe-node-exporter
+    restart: unless-stopped
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    networks:
+      - probe-network
+    ports:
+      - "9100:9100"
+
+volumes:
+  vpn-credentials:
+    external: true
+  redis-data:
+
+networks:
+  probe-network:
+    driver: bridge

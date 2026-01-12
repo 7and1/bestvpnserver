@@ -1,0 +1,11 @@
+[Unit]
+Description=BestVPNServer database maintenance
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/docker-projects/bestvpnserver
+EnvironmentFile=/opt/docker-projects/bestvpnserver/.env
+ExecStart=/usr/bin/env bash /opt/docker-projects/bestvpnserver/infrastructure/central/scripts/run-db-maintenance.sh
+TimeoutStartSec=900

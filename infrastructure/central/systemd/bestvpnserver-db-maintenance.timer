@@ -1,0 +1,10 @@
+[Unit]
+Description=Run BestVPNServer DB maintenance hourly
+
+[Timer]
+OnCalendar=*-*-* *:05:00
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "bestvpnserver-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2024-12-30",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets",
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "bestvpnserver-web",
+    },
+  ],
+  "vars": {
+    "NODE_ENV": "production",
+  },
+}

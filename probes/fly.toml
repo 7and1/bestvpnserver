@@ -1,0 +1,22 @@
+app = "bestvpnserver-probe"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PROBE_ID = "iad"
+  REDIS_URL = "redis://..."
+  WEBHOOK_URL = "https://bestvpnserver.com/api/webhooks/probe-results"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
