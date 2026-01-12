@@ -4,6 +4,7 @@ import {
   inet,
   integer,
   numeric,
+  pgSchema,
   pgTable,
   primaryKey,
   serial,
@@ -13,15 +14,21 @@ import {
   timestamp,
   unique,
   varchar,
+  type PgSchema,
 } from "drizzle-orm/pg-core";
 
-export const countries = pgTable("countries", {
+const schemaName = process.env.DB_SCHEMA || "public";
+// Don't use pgSchema for 'public' schema - Drizzle doesn't allow it
+// Using a type assertion to handle the union type
+const schema = (schemaName === "public" ? { table: pgTable } : pgSchema(schemaName)) as PgSchema;
+
+export const countries = schema.table("countries", {
   id: smallserial("id").primaryKey(),
   isoCode: char("iso_code", { length: 2 }).notNull().unique(),
   name: varchar("name", { length: 100 }).notNull(),
 });
 
-export const cities = pgTable(
+export const cities = schema.table(
   "cities",
   {
     id: serial("id").primaryKey(),
@@ -37,7 +44,7 @@ export const cities = pgTable(
   }),
 );
 
-export const probeLocations = pgTable("probe_locations", {
+export const probeLocations = schema.table("probe_locations", {
   id: smallserial("id").primaryKey(),
   code: varchar("code", { length: 10 }).notNull().unique(),
   cityId: integer("city_id").references(() => cities.id),
@@ -45,20 +52,20 @@ export const probeLocations = pgTable("probe_locations", {
   isActive: boolean("is_active").notNull().default(true),
 });
 
-export const protocols = pgTable("protocols", {
+export const protocols = schema.table("protocols", {
   id: smallserial("id").primaryKey(),
   name: varchar("name", { length: 30 }).notNull().unique(),
   defaultPort: smallint("default_port"),
 });
 
-export const streamingPlatforms = pgTable("streaming_platforms", {
+export const streamingPlatforms = schema.table("streaming_platforms", {
   id: smallserial("id").primaryKey(),
   slug: varchar("slug", { length: 30 }).notNull().unique(),
   name: varchar("name", { length: 50 }).notNull(),
   region: char("region", { length: 2 }),
 });
 
-export const providers = pgTable("providers", {
+export const providers = schema.table("providers", {
   id: smallserial("id").primaryKey(),
   name: varchar("name", { length: 50 }).notNull(),
   slug: varchar("slug", { length: 50 }).notNull().unique(),
@@ -70,7 +77,7 @@ export const providers = pgTable("providers", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-export const servers = pgTable(
+export const servers = schema.table(
   "servers",
   {
     id: serial("id").primaryKey(),
@@ -91,7 +98,7 @@ export const servers = pgTable(
   }),
 );
 
-export const serverProtocols = pgTable(
+export const serverProtocols = schema.table(
   "server_protocols",
   {
     serverId: integer("server_id")
@@ -107,7 +114,7 @@ export const serverProtocols = pgTable(
   }),
 );
 
-export const performanceLogs = pgTable(
+export const performanceLogs = schema.table(
   "performance_logs",
   {
     serverId: integer("server_id")
@@ -134,7 +141,7 @@ export const performanceLogs = pgTable(
   }),
 );
 
-export const streamingChecks = pgTable(
+export const streamingChecks = schema.table(
   "streaming_checks",
   {
     serverId: integer("server_id")
@@ -156,7 +163,7 @@ export const streamingChecks = pgTable(
   }),
 );
 
-export const performanceLogsHourly = pgTable(
+export const performanceLogsHourly = schema.table(
   "performance_logs_hourly",
   {
     serverId: integer("server_id")

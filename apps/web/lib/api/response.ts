@@ -95,12 +95,15 @@ export function apiError(
   };
 
   const status = options?.status ?? statusMap[code] ?? 500;
+  const errorResponse: ApiErrorResponse["error"] = {
+    code,
+    message,
+  };
+  if (options?.details) {
+    errorResponse.details = options.details;
+  }
   const response: ApiErrorResponse = {
-    error: {
-      code,
-      message,
-      ...(options?.details && { details: options.details }),
-    },
+    error: errorResponse,
   };
 
   return NextResponse.json(response, {
