@@ -1,5 +1,6 @@
 .DS_Store
 node_modules
+.turbo
 .pnpm-store
 .next
 out
