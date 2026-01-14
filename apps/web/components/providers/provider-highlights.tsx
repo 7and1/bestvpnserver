@@ -1,9 +1,33 @@
+"use client";
+
+import * as React from "react";
 import Link from "next/link";
+import useSWR from "swr";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getTopProviderHighlights } from "@/lib/data/providers";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+type ProviderHighlight = {
+  providerId: number;
+  name: string;
+  slug: string;
+  websiteUrl: string | null;
+  affiliateLink: string | null;
+  logoUrl: string | null;
+  serverCount: number;
+  countryCount: number;
+  cityCount: number;
+  avgPing: number | null;
+  avgDownload: number | null;
+  avgUpload: number | null;
+  uptimePct: number | null;
+  lastMeasured: string | null;
+  rank: number;
+};
 
 function formatMetric(value: number | null, suffix: string, digits = 1) {
   if (value === null || Number.isNaN(value)) return "-";
@@ -35,7 +59,7 @@ function getInitials(name: string) {
     .join("");
 }
 
-export async function ProviderHighlights({
+export function ProviderHighlights({
   title,
   subtitle,
   limit = 6,
@@ -48,7 +72,10 @@ export async function ProviderHighlights({
   ctaLabel?: string;
   ctaHref?: string;
 }) {
-  const providers = await getTopProviderHighlights(limit);
+  const { data: providers, isLoading } = useSWR<ProviderHighlight[]>(
+    `/api/providers/highlights?limit=${limit}`,
+    fetcher,
+  );
 
   return (
     <section className="space-y-6">
@@ -65,7 +92,24 @@ export async function ProviderHighlights({
         </Button>
       </div>
 
-      {providers.length === 0 ? (
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i} className="bg-white/80">
+              <CardContent className="p-6">
+                <Skeleton className="mb-4 h-5 w-24" />
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : !providers || providers.length === 0 ? (
         <Card className="bg-white/80">
           <CardContent className="p-6 text-sm text-muted-foreground">
             Provider telemetry will appear once probes begin reporting.
