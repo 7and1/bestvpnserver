@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Workers
 
 on:
   push:
@@ -12,10 +12,10 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy to Cloudflare Pages
+    name: Deploy to Cloudflare Workers
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup pnpm
@@ -31,47 +31,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build for Cloudflare Pages
-        run: |
-          pnpm --filter web run cf:build
-          # Copy worker.js to _worker.js for Pages Functions
-          cp apps/web/.open-next/worker.js apps/web/.open-next/assets/_worker.js
-          # Copy required directories for the worker
-          cp -r apps/web/.open-next/cloudflare apps/web/.open-next/assets/
-          cp -r apps/web/.open-next/middleware apps/web/.open-next/assets/
-          cp -r apps/web/.open-next/server-functions apps/web/.open-next/assets/
-          cp -r apps/web/.open-next/.build apps/web/.open-next/assets/
-
-      - name: Temporarily rename wrangler.toml (for Pages deployment)
-        run: mv apps/web/wrangler.toml apps/web/wrangler.toml.backup
+      - name: Build for Cloudflare
+        run: pnpm --filter web run cf:build
 
       - name: Set environment variables via Cloudflare API
         run: |
-          # Set DATABASE_URL for production
-          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/bestvpnserver-pages/env/production/variables/DATABASE_URL" \
-            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            --data '{"value":"${{ secrets.DATABASE_URL }}"}' || echo "Failed to set DATABASE_URL (project might not exist yet)"
+          # Update wrangler.toml with environment variables
+          sed -i 's|NODE_ENV = "production"|NODE_ENV = "production"\nDATABASE_URL = "${{ secrets.DATABASE_URL }}"\nREDIS_URL = "${{ secrets.REDIS_URL }}"|' apps/web/wrangler.toml
 
-          # Set REDIS_URL for production
-          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/bestvpnserver-pages/env/production/variables/REDIS_URL" \
-            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            --data '{"value":"${{ secrets.REDIS_URL }}"}' || echo "Failed to set REDIS_URL (project might not exist yet)"
-
-      - name: Deploy to Cloudflare Pages
-        run: |
-          cd apps/web
-          npx wrangler pages deploy .open-next/assets --project-name=bestvpnserver-pages
+      - name: Deploy to Cloudflare Workers
+        run: pnpm --filter web run cf:deploy
         env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Restore wrangler.toml
-        run: mv apps/web/wrangler.toml.backup apps/web/wrangler.toml
+        run: |
+          git restore apps/web/wrangler.toml
 
       - name: Deployment Summary
         run: |
           echo "### Deployment Successful! :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**URL:** https://bestvpnserver-pages.pages.dev" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://bestvpnserver-web.7and1.workers.dev" >> $GITHUB_STEP_SUMMARY
