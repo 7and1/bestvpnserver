@@ -20,7 +20,9 @@ import {
 const schemaName = process.env.DB_SCHEMA || "public";
 // Don't use pgSchema for 'public' schema - Drizzle doesn't allow it
 // Using a type assertion to handle the union type
-const schema = (schemaName === "public" ? { table: pgTable } : pgSchema(schemaName)) as PgSchema;
+const schema = (
+  schemaName === "public" ? { table: pgTable } : pgSchema(schemaName)
+) as PgSchema;
 
 export const countries = schema.table("countries", {
   id: smallserial("id").primaryKey(),

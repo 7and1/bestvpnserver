@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 
+import { isDatabaseConfigured } from "@/lib/env";
 import { getDb } from "@/lib/db";
 import { buildCacheKey, hashKey } from "@/lib/cache/keys";
 import { getOrSetCache } from "@/lib/cache/query";
@@ -44,6 +45,14 @@ export async function GET(request: NextRequest) {
     limit,
     offset,
   } = parsed.data;
+
+  // Return empty data when database is not configured
+  if (!isDatabaseConfigured) {
+    return NextResponse.json({
+      data: [],
+      pagination: { limit, offset },
+    });
+  }
 
   const db = getDb();
   const conditions = [sql`s.is_active = true`];
