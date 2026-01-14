@@ -40,25 +40,33 @@ jobs:
           cp -r apps/web/.open-next/server-functions apps/web/.open-next/assets/
           cp -r apps/web/.open-next/.build apps/web/.open-next/assets/
 
+      - name: Temporarily rename wrangler.toml (for Pages deployment)
+        run: mv apps/web/wrangler.toml apps/web/wrangler.toml.backup
+
       - name: Set environment variables via Cloudflare API
         run: |
           # Set DATABASE_URL for production
           curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/bestvpnserver-pages/env/production/variables/DATABASE_URL" \
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
-            --data '{"value":"${{ secrets.DATABASE_URL }}"}'
+            --data '{"value":"${{ secrets.DATABASE_URL }}"}' || echo "Failed to set DATABASE_URL (project might not exist yet)"
 
           # Set REDIS_URL for production
           curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/bestvpnserver-pages/env/production/variables/REDIS_URL" \
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
-            --data '{"value":"${{ secrets.REDIS_URL }}"}'
+            --data '{"value":"${{ secrets.REDIS_URL }}"}' || echo "Failed to set REDIS_URL (project might not exist yet)"
 
       - name: Deploy to Cloudflare Pages
-        run: npx wrangler pages deploy apps/web/.open-next/assets --project-name=bestvpnserver-pages
+        run: |
+          cd apps/web
+          npx wrangler pages deploy .open-next/assets --project-name=bestvpnserver-pages
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Restore wrangler.toml
+        run: mv apps/web/wrangler.toml.backup apps/web/wrangler.toml
 
       - name: Deployment Summary
         run: |
