@@ -39,9 +39,20 @@ jobs:
           cp -r apps/web/.open-next/middleware apps/web/.open-next/assets/
           cp -r apps/web/.open-next/server-functions apps/web/.open-next/assets/
           cp -r apps/web/.open-next/.build apps/web/.open-next/assets/
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
+
+      - name: Set environment variables via Cloudflare API
+        run: |
+          # Set DATABASE_URL
+          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/bestvpnserver-web/env/production/variables/DATABASE_URL" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"value":"${{ secrets.DATABASE_URL }}"}'
+
+          # Set REDIS_URL
+          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/bestvpnserver-web/env/production/variables/REDIS_URL" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"value":"${{ secrets.REDIS_URL }}"}'
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

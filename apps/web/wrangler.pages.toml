@@ -1,0 +1,17 @@
+# Cloudflare Pages Configuration
+# Environment variables need to be set in Cloudflare Pages dashboard:
+# https://dash.cloudflare.com/[account]/pages/view/[project]/settings/environment-variables
+
+name = "bestvpnserver-web"
+compatibility_date = "2024-12-30"
+compatibility_flags = ["nodejs_compat"]
+
+# Production environment variables (set in dashboard)
+# DATABASE_URL = "postgresql://..."
+# REDIS_URL = "redis://..."
+
+[env.production.vars]
+NODE_ENV = "production"
+
+[env.preview.vars]
+NODE_ENV = "development"
