@@ -7,8 +7,12 @@ import { buildCacheKey, hashKey } from "@/lib/cache/keys";
 import { getOrSetCache } from "@/lib/cache/query";
 import { withRateLimit } from "@/lib/rate-limit";
 import { ServerQuerySchema } from "@/lib/validation/schemas";
+import { proxyApiRequest } from "@/lib/api/proxy";
 
-export const runtime = "nodejs";
+// Detect Workers environment
+const isWorkers = typeof caches !== "undefined" && "default" in caches;
+
+export const runtime = isWorkers ? "edge" : "nodejs";
 export const dynamic = "force-dynamic";
 
 const CACHE_TTL_SECONDS = 120;
@@ -21,6 +25,11 @@ const protocolLookup: Record<string, string> = {
 };
 
 export async function GET(request: NextRequest) {
+  // In Workers, proxy to backend API
+  if (isWorkers) {
+    return proxyApiRequest("/api/servers", request);
+  }
+
   const rateLimited = await withRateLimit(request, "api");
   if (rateLimited) return rateLimited;
 
