@@ -34,19 +34,14 @@ jobs:
       - name: Build for Cloudflare
         run: pnpm --filter web run cf:build
 
-      - name: Set environment secrets via Cloudflare API
+      - name: Set environment secrets via wrangler
         run: |
-          # Set DATABASE_URL secret
-          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/workers/scripts/bestvpnserver-web/secrets/DATABASE_URL" \
-            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            --data '{"type":"secret_text","text":"${{ secrets.DATABASE_URL }}","value":"${{ secrets.DATABASE_URL }}"}' || echo "Failed to set DATABASE_URL"
-
-          # Set REDIS_URL secret
-          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/workers/scripts/bestvpnserver-web/secrets/REDIS_URL" \
-            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            --data '{"type":"secret_text","text":"${{ secrets.REDIS_URL }}","value":"${{ secrets.REDIS_URL }}"}' || echo "Failed to set REDIS_URL"
+          cd apps/web
+          echo "${{ secrets.DATABASE_URL }}" | pnpm wrangler secret put DATABASE_URL
+          echo "${{ secrets.REDIS_URL }}" | pnpm wrangler secret put REDIS_URL
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy to Cloudflare Workers
         run: pnpm --filter web run cf:deploy
