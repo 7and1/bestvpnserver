@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 
+import { isWorkersRuntime, proxyApiRequest } from "@/lib/api/proxy";
 import { getRedis } from "@/lib/redis";
 import { withRateLimit } from "@/lib/rate-limit";
 
-export const runtime = "nodejs";
+const isWorkers = isWorkersRuntime;
+
+export const runtime = isWorkers ? "edge" : "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  if (isWorkers) {
+    return proxyApiRequest("/api/tools/dns-test/start", request);
+  }
+
   const rateLimited = await withRateLimit(request, "tools");
   if (rateLimited) return rateLimited;
 

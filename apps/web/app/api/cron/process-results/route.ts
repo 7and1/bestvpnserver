@@ -7,16 +7,23 @@ import {
   streamingChecks,
   streamingPlatforms,
 } from "@bestvpnserver/database";
+import { isWorkersRuntime, proxyApiRequest } from "@/lib/api/proxy";
 import { getDb } from "@/lib/db";
 import { getRedis } from "@/lib/redis";
 
-export const runtime = "nodejs";
+const isWorkers = isWorkersRuntime;
+
+export const runtime = isWorkers ? "edge" : "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const BATCH_SIZE = 1000;
 
 export async function GET(request: Request) {
+  if (isWorkers) {
+    return proxyApiRequest("/api/cron/process-results", request);
+  }
+
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { isWorkersRuntime, proxyApiRequest } from "@/lib/api/proxy";
 import { proxyGridSearch } from "@/lib/proxy-grid";
 import { withRateLimit } from "@/lib/rate-limit";
 import { MerchantQuerySchema } from "@/lib/validation/schemas";
 
-export const runtime = "nodejs";
+const isWorkers = isWorkersRuntime;
+
+export const runtime = isWorkers ? "edge" : "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
@@ -17,6 +20,10 @@ function isAuthorized(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (isWorkers) {
+    return proxyApiRequest("/api/merchants", request);
+  }
+
   const rateLimited = await withRateLimit(request, "api");
   if (rateLimited) return rateLimited;
 

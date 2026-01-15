@@ -15,6 +15,7 @@
     },
   ],
   "vars": {
+    "BACKEND_URL": "http://107.174.42.198:8880",
     "NODE_ENV": "production",
   },
 }

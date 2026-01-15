@@ -18,8 +18,6 @@ export async function GET(request: NextRequest) {
     );
     // If backend is not configured (503), return empty data
     if (proxyResponse.status === 503) {
-      const searchParams = Object.fromEntries(request.nextUrl.searchParams);
-      const limit = Number(searchParams.limit ?? "6");
       // Return empty array with same structure
       return NextResponse.json([]);
     }

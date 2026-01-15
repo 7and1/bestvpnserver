@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
+import { isWorkersRuntime, proxyApiRequest } from "@/lib/api/proxy";
 import { withRateLimit } from "@/lib/rate-limit";
 import { IpInfoSchema } from "@/lib/validation/schemas";
 
-export const runtime = "nodejs";
+const isWorkers = isWorkersRuntime;
+
+export const runtime = isWorkers ? "edge" : "nodejs";
 export const dynamic = "force-dynamic";
 
 async function lookupGeo(ip: string | null) {
@@ -40,6 +43,10 @@ async function lookupGeo(ip: string | null) {
 }
 
 export async function GET(request: NextRequest) {
+  if (isWorkers) {
+    return proxyApiRequest("/api/tools/my-ip", request);
+  }
+
   const rateLimited = await withRateLimit(request, "tools");
   if (rateLimited) return rateLimited;
 

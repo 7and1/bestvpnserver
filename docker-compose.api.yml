@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  bestvpnserver-api:
+    container_name: bestvpnserver-api
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    env_file:
+      - .env.backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "8880:3000"
+    networks:
+      - supabase-tier
+
+networks:
+  supabase-tier:
+    external: true
+    name: supabase_default

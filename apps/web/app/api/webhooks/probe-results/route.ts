@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { isWorkersRuntime, proxyApiRequest } from "@/lib/api/proxy";
 import { verifyProbeSignature } from "@/lib/auth/probe-signature";
 import { getRedis } from "@/lib/redis";
 import { withRateLimit } from "@/lib/rate-limit";
 import { ProbeResultSchema } from "@/lib/validation/schemas";
 
-export const runtime = "nodejs";
+const isWorkers = isWorkersRuntime;
+
+export const runtime = isWorkers ? "edge" : "nodejs";
 export const dynamic = "force-dynamic";
 
 const allowedIps = new Set(
@@ -16,6 +19,10 @@ const allowedIps = new Set(
 );
 
 export async function POST(request: NextRequest) {
+  if (isWorkers) {
+    return proxyApiRequest("/api/webhooks/probe-results", request);
+  }
+
   const rateLimited = await withRateLimit(request, "probes");
   if (rateLimited) return rateLimited;
 

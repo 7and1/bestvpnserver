@@ -1,5 +1,9 @@
 const BACKEND_URL = process.env.BACKEND_URL;
 
+export const isWorkersRuntime =
+  Boolean(process.env.BACKEND_URL) ||
+  (typeof caches !== "undefined" && "default" in caches);
+
 export async function proxyApiRequest(
   path: string,
   request: Request,
