@@ -37,9 +37,11 @@ jobs:
       - name: Set environment secrets via wrangler
         run: |
           cd apps/web
+          # Delete old BACKEND_URL var if it exists (was previously a var, now removed)
+          pnpm wrangler vars delete BACKEND_URL 2>/dev/null || true
+          # Set secrets
           echo "${{ secrets.DATABASE_URL }}" | pnpm wrangler secret put DATABASE_URL
           echo "${{ secrets.REDIS_URL }}" | pnpm wrangler secret put REDIS_URL
-          echo "${{ secrets.BACKEND_URL }}" | pnpm wrangler secret put BACKEND_URL
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
