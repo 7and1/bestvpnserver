@@ -18,7 +18,17 @@ const VPN_RESOLVERS: Record<string, string[]> = {
 
 export async function GET(request: NextRequest) {
   if (isWorkers) {
-    return proxyApiRequest("/api/tools/dns-test/results", request);
+    const proxyResponse = await proxyApiRequest(
+      "/api/tools/dns-test/results",
+      request,
+    );
+    if (proxyResponse.status === 503) {
+      return NextResponse.json(
+        { error: "Service temporarily unavailable" },
+        { status: 503 },
+      );
+    }
+    return proxyResponse;
   }
 
   const rateLimited = await withRateLimit(request, "tools");

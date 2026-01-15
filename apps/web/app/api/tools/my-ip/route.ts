@@ -44,7 +44,17 @@ async function lookupGeo(ip: string | null) {
 
 export async function GET(request: NextRequest) {
   if (isWorkers) {
-    return proxyApiRequest("/api/tools/my-ip", request);
+    const proxyResponse = await proxyApiRequest("/api/tools/my-ip", request);
+    if (proxyResponse.status === 503) {
+      // Return basic IP info when backend is unavailable
+      const headersList = headers();
+      const ip =
+        headersList.get("cf-connecting-ip") ||
+        headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        "Unknown";
+      return NextResponse.json({ ip, geo: null, isVPN: false });
+    }
+    return proxyResponse;
   }
 
   const rateLimited = await withRateLimit(request, "tools");

@@ -10,7 +10,17 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   if (isWorkers) {
-    return proxyApiRequest("/api/tools/speedtest/ping", request);
+    const proxyResponse = await proxyApiRequest(
+      "/api/tools/speedtest/ping",
+      request,
+    );
+    if (proxyResponse.status === 503) {
+      return NextResponse.json(
+        { ok: true, ts: Date.now() },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    return proxyResponse;
   }
 
   const rateLimited = await withRateLimit(request, "tools");

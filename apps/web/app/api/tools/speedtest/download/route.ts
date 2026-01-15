@@ -11,7 +11,24 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   if (isWorkers) {
-    return proxyApiRequest("/api/tools/speedtest/download", request);
+    const proxyResponse = await proxyApiRequest(
+      "/api/tools/speedtest/download",
+      request,
+    );
+    if (proxyResponse.status === 503) {
+      // Fallback: generate data locally in Workers
+      const sizeParam = request.nextUrl.searchParams.get("size") ?? "1000000";
+      const size = Number.parseInt(sizeParam, 10) || 1_000_000;
+      const data = new Uint8Array(size);
+      return new NextResponse(data, {
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "Content-Length": size.toString(),
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+    return proxyResponse;
   }
 
   const rateLimited = await withRateLimit(request, "tools");

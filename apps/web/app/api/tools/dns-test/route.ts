@@ -10,7 +10,20 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   if (isWorkers) {
-    return proxyApiRequest("/api/tools/dns-test", request);
+    const proxyResponse = await proxyApiRequest("/api/tools/dns-test", request);
+    if (proxyResponse.status === 503) {
+      return NextResponse.json({
+        name: "DNS Leak Test",
+        version: "1.0.0",
+        endpoints: {
+          start: "POST /api/tools/dns-test/start",
+          results: "GET /api/tools/dns-test/results/:testId",
+          log: "POST /api/tools/dns-test/log",
+        },
+        unavailable: true,
+      });
+    }
+    return proxyResponse;
   }
 
   const rateLimited = await withRateLimit(request, "tools");

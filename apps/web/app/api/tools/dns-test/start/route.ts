@@ -12,7 +12,18 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   if (isWorkers) {
-    return proxyApiRequest("/api/tools/dns-test/start", request);
+    const proxyResponse = await proxyApiRequest(
+      "/api/tools/dns-test/start",
+      request,
+    );
+    if (proxyResponse.status === 503) {
+      // Return error when backend unavailable (needs Redis)
+      return NextResponse.json(
+        { error: "Service temporarily unavailable" },
+        { status: 503 },
+      );
+    }
+    return proxyResponse;
   }
 
   const rateLimited = await withRateLimit(request, "tools");

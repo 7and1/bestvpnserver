@@ -1,19 +1,32 @@
 const BACKEND_URL = process.env.BACKEND_URL;
+const isWorkers = typeof caches !== "undefined" && "default" in caches;
 
-export const isWorkersRuntime =
-  Boolean(process.env.BACKEND_URL) ||
-  (typeof caches !== "undefined" && "default" in caches);
+export const isWorkersRuntime = isWorkers || Boolean(process.env.BACKEND_URL);
 
 export async function proxyApiRequest(
   path: string,
   request: Request,
 ): Promise<Response> {
-  // If no backend URL is configured, return a 503 indicating the service is unavailable
+  // If no backend URL is configured, return a 503
   if (!BACKEND_URL) {
     return new Response(
       JSON.stringify({
         error: "Service Unavailable",
         message: "API backend is not configured",
+      }),
+      {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
+
+  // Workers cannot fetch HTTP URLs, only HTTPS
+  if (isWorkers && BACKEND_URL.startsWith("http:")) {
+    return new Response(
+      JSON.stringify({
+        error: "Backend Unreachable",
+        message: "Workers requires HTTPS backend URL",
       }),
       {
         status: 503,
@@ -45,9 +58,22 @@ export async function proxyApiRequest(
       ? await request.blob()
       : undefined;
 
-  return fetch(targetUrl.toString(), {
-    method: request.method,
-    headers,
-    body,
-  });
+  try {
+    return await fetch(targetUrl.toString(), {
+      method: request.method,
+      headers,
+      body,
+    });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        error: "Backend Error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
 }
