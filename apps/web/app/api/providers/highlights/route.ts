@@ -10,9 +10,20 @@ export const runtime = isWorkers ? "edge" : "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  // In Workers, proxy to backend API
+  // In Workers, try to proxy to backend API, fall back to empty data
   if (isWorkers) {
-    return proxyApiRequest("/api/providers/highlights", request);
+    const proxyResponse = await proxyApiRequest(
+      "/api/providers/highlights",
+      request,
+    );
+    // If backend is not configured (503), return empty data
+    if (proxyResponse.status === 503) {
+      const searchParams = Object.fromEntries(request.nextUrl.searchParams);
+      const limit = Number(searchParams.limit ?? "6");
+      // Return empty array with same structure
+      return NextResponse.json([]);
+    }
+    return proxyResponse;
   }
 
   const searchParams = Object.fromEntries(request.nextUrl.searchParams);

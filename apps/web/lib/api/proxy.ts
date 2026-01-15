@@ -1,9 +1,23 @@
-const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:3000";
+const BACKEND_URL = process.env.BACKEND_URL;
 
 export async function proxyApiRequest(
   path: string,
   request: Request,
 ): Promise<Response> {
+  // If no backend URL is configured, return a 503 indicating the service is unavailable
+  if (!BACKEND_URL) {
+    return new Response(
+      JSON.stringify({
+        error: "Service Unavailable",
+        message: "API backend is not configured",
+      }),
+      {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
+
   const url = new URL(request.url);
   const targetUrl = new URL(path, BACKEND_URL);
 

@@ -12,9 +12,9 @@ const footerLinks = {
     { label: "Best VPN for Privacy", href: "/best-vpn-for-privacy" },
   ],
   tools: [
-    { label: "IP Lookup", href: "/tools/my-ip" },
-    { label: "DNS Leak Test", href: "/tools/dns-test" },
-    { label: "Speed Test", href: "/tools/speedtest" },
+    { label: "IP Lookup", href: "/tools" },
+    { label: "DNS Leak Test", href: "/tools" },
+    { label: "Speed Test", href: "/tools" },
   ],
   legal: [
     { label: "Privacy Policy", href: "/privacy" },

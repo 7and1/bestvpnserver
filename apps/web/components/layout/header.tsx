@@ -40,7 +40,7 @@ export function Header() {
             asChild
             className="hidden sm:inline-flex"
           >
-            <Link href="/tools/my-ip">Check My IP</Link>
+            <Link href="/tools">Check My IP</Link>
           </Button>
         </div>
       </div>

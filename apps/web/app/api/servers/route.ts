@@ -25,9 +25,17 @@ const protocolLookup: Record<string, string> = {
 };
 
 export async function GET(request: NextRequest) {
-  // In Workers, proxy to backend API
+  // In Workers, try to proxy to backend API, fall back to empty data
   if (isWorkers) {
-    return proxyApiRequest("/api/servers", request);
+    const proxyResponse = await proxyApiRequest("/api/servers", request);
+    // If backend is not configured (503), return empty data
+    if (proxyResponse.status === 503) {
+      return NextResponse.json({
+        data: [],
+        pagination: { limit: 20, offset: 0 },
+      });
+    }
+    return proxyResponse;
   }
 
   const rateLimited = await withRateLimit(request, "api");
