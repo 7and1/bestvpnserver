@@ -13,10 +13,10 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <div className="min-h-screen bg-[#f7f4ef] px-6 py-12 md:px-12">
+    <div className="min-h-screen bg-background px-6 py-12 md:px-12">
       <div className="mx-auto max-w-xl">
         <Card className="bg-white/80">
-          <CardContent className="space-y-4 p-6">
+          <CardContent className="space-y-4 p-6" role="alert" aria-live="assertive">
             <h1 className="text-2xl font-semibold">Something went wrong</h1>
             <p className="text-sm text-muted-foreground">
               We could not load this page. Try again or return to the homepage.

@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { isWorkersRuntime, proxyApiRequest } from "@/lib/api/proxy";
+import { proxyApiRequest } from "@/lib/api/proxy";
+import { isWorkers } from "@/lib/runtime";
 import { verifyProbeSignature } from "@/lib/auth/probe-signature";
 import { getRedis } from "@/lib/redis";
 import { withRateLimit } from "@/lib/rate-limit";
 import { ProbeResultSchema } from "@/lib/validation/schemas";
-
-const isWorkers = isWorkersRuntime;
 
 export const runtime = isWorkers ? "edge" : "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +17,41 @@ const allowedIps = new Set(
     .filter(Boolean),
 );
 
+/**
+ * Validates and extracts a client IP address from headers.
+ * Prevents IP injection attacks by validating the format.
+ */
+function getClientIP(request: NextRequest): string | null {
+  // In Cloudflare Workers, use CF-Connecting-IP which is set by Cloudflare
+  // This header cannot be spoofed as it's set by the edge
+  const cfConnectingIP = request.headers.get("CF-Connecting-IP");
+  if (cfConnectingIP) {
+    return cfConnectingIP;
+  }
+
+  // Fallback to x-forwarded-for for non-Workers environments
+  // Take the first (leftmost) IP which is the original client
+  const xForwardedFor = request.headers.get("x-forwarded-for");
+  if (xForwardedFor) {
+    const ips = xForwardedFor.split(",").map((ip) => ip.trim());
+    const firstIP = ips[0];
+
+    // Basic IP validation to prevent injection attacks
+    // Reject if contains non-IP characters (newlines, etc.)
+    if (firstIP && /^[a-fA-F0-9.:]+$/.test(firstIP)) {
+      return firstIP;
+    }
+
+    // Log suspicious input
+    console.warn(
+      "[ProbeWebhook] Suspicious x-forwarded-for value rejected:",
+      JSON.stringify(xForwardedFor),
+    );
+  }
+
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   if (isWorkers) {
     return proxyApiRequest("/api/webhooks/probe-results", request);
@@ -26,13 +60,14 @@ export async function POST(request: NextRequest) {
   const rateLimited = await withRateLimit(request, "probes");
   if (rateLimited) return rateLimited;
 
-  const clientIP = request.headers.get("x-forwarded-for")?.split(",")[0];
+  const clientIP = getClientIP(request);
   if (
     process.env.NODE_ENV === "production" &&
     allowedIps.size > 0 &&
     clientIP &&
     !allowedIps.has(clientIP)
   ) {
+    console.warn("[ProbeWebhook] Unauthorized IP attempt:", clientIP);
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

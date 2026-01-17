@@ -6,6 +6,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ProviderInfoCard } from "@/components/providers/provider-info-card";
 import { getProviderPageData } from "@/lib/data/seo-pages";
 import { buildBreadcrumbSchema, buildWebPageSchema } from "@/lib/pseo/schema";
 import { SITE_URL } from "@/lib/site";
@@ -71,7 +72,7 @@ export default async function ProviderPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef] px-6 py-12 md:px-12">
+    <div className="min-h-screen bg-background px-6 py-12 md:px-12">
       <JsonLd data={schema} />
       <div className="mx-auto max-w-6xl space-y-10">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -156,30 +157,43 @@ export default async function ProviderPage({
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80">
-            <CardContent className="p-6">
-              <div className="text-sm font-semibold">Latest measurement</div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                {data.lastUpdated
-                  ? new Date(data.lastUpdated).toLocaleString("en-US", {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })
-                  : "Awaiting latest probe run"}
-              </div>
-              <div className="mt-6">
-                <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Avg latency
+          <div className="space-y-6">
+            <Card className="bg-white/80">
+              <CardContent className="p-6">
+                <div className="text-sm font-semibold">Latest measurement</div>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  {data.lastUpdated
+                    ? new Date(data.lastUpdated).toLocaleString("en-US", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })
+                    : "Awaiting latest probe run"}
                 </div>
-                <div className="mt-2 text-2xl font-semibold">
-                  {formatMetric(provider.avgPing, "ms", 0)}
+                <div className="mt-6">
+                  <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Avg latency
+                  </div>
+                  <div className="mt-2 text-2xl font-semibold">
+                    {formatMetric(provider.avgPing, "ms", 0)}
+                  </div>
                 </div>
-              </div>
-              <div className="mt-6 text-xs text-muted-foreground">
-                Data is refreshed every 5 minutes from global probes.
-              </div>
-            </CardContent>
-          </Card>
+                <div className="mt-6 text-xs text-muted-foreground">
+                  Data is refreshed every 5 minutes from global probes.
+                </div>
+              </CardContent>
+            </Card>
+
+            <ProviderInfoCard
+              provider={{
+                foundedYear: provider.foundedYear,
+                headquarters: provider.headquarters,
+                protocols: provider.protocols,
+                refundPolicy: provider.refundPolicy,
+                deviceLimit: provider.deviceLimit,
+                pricingTier: provider.pricingTier,
+              }}
+            />
+          </div>
         </section>
 
         <section>

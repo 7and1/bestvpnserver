@@ -10,11 +10,16 @@ const footerLinks = {
     { label: "Best VPN for Streaming", href: "/best-vpn-for-streaming" },
     { label: "Best VPN for Gaming", href: "/best-vpn-for-gaming" },
     { label: "Best VPN for Privacy", href: "/best-vpn-for-privacy" },
+    { label: "Best VPN for China", href: "/best-vpn-for-china" },
+    { label: "Best Cheap VPN", href: "/best-cheap-vpn" },
+    { label: "Fastest VPN", href: "/fastest-vpn" },
+    { label: "VPN with Dedicated IP", href: "/best-vpn-with-dedicated-ip" },
+    { label: "VPN with Port Forwarding", href: "/best-vpn-with-port-forwarding" },
   ],
   tools: [
-    { label: "IP Lookup", href: "/tools" },
-    { label: "DNS Leak Test", href: "/tools" },
-    { label: "Speed Test", href: "/tools" },
+    { label: "IP Lookup", href: "/tools#ip-lookup" },
+    { label: "DNS Leak Test", href: "/tools#dns-leak" },
+    { label: "Speed Test", href: "/tools#speed-test" },
   ],
   legal: [
     { label: "Privacy Policy", href: "/privacy" },
@@ -27,12 +32,12 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border/40 bg-muted/30">
-      <div className="mx-auto max-w-6xl px-6 py-12">
+    <footer className="border-t border-foreground/10 bg-white/60 backdrop-blur">
+      <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-xs font-bold shadow-sm">
                 BV
               </div>
               <span className="font-semibold">BestVPNServer</span>
@@ -47,6 +52,22 @@ export function Footer() {
             <h3 className="text-sm font-semibold mb-3">Product</h3>
             <ul className="space-y-2">
               {footerLinks.product.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Use Cases</h3>
+            <ul className="space-y-2">
+              {footerLinks.useCases.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -92,7 +113,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-border/40 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="mt-12 pt-8 border-t border-foreground/10 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             © {currentYear} BestVPNServer.com. All rights reserved.
           </p>

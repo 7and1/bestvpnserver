@@ -1,11 +1,12 @@
 import { sql } from "drizzle-orm";
 
-import { providers } from "@bestvpnserver/database";
 import { getDb } from "@/lib/db";
 import { isDatabaseConfigured } from "@/lib/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+type ProviderRow = { slug: string; updated_at: Date | null };
 
 export async function GET() {
   if (!isDatabaseConfigured) {
@@ -15,17 +16,16 @@ export async function GET() {
     );
   }
 
-  const providerRows = await getDb()
-    .select({ slug: providers.slug, updatedAt: providers.updatedAt })
-    .from(providers)
-    .where(sql`${providers.isActive} = true`);
+  const providerRows = await getDb().execute<ProviderRow>(
+    sql`SELECT slug, updated_at FROM providers WHERE is_active = true`,
+  );
 
   const lastUpdate = new Date().toISOString();
 
   const urls = providerRows.map((provider) => ({
     loc: `/status/${provider.slug}`,
-    lastmod: provider.updatedAt
-      ? new Date(provider.updatedAt).toISOString()
+    lastmod: provider.updated_at
+      ? new Date(provider.updated_at).toISOString()
       : lastUpdate,
     changefreq: "hourly",
     priority: 0.5,

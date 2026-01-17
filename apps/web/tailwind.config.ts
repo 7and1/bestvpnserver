@@ -17,6 +17,10 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -72,10 +76,30 @@ const config: Config = {
             boxShadow: "0 0 10px rgba(255,255,255,0.05)",
           },
         },
+        "slide-in-from-left": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        "slide-in-from-right": {
+          "0%": { transform: "translateX(100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        "slide-out-to-left": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-100%)" },
+        },
+        "slide-out-to-right": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       animation: {
         "fade-in-up": "fade-in-up 0.5s ease-out forwards",
         "pulse-glow": "pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "slide-in-from-left": "slide-in-from-left 0.5s ease-out",
+        "slide-in-from-right": "slide-in-from-right 0.5s ease-out",
+        "slide-out-to-left": "slide-out-to-left 0.5s ease-in",
+        "slide-out-to-right": "slide-out-to-right 0.5s ease-in",
       },
     },
   },

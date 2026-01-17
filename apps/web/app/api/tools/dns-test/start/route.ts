@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 
-import { isWorkersRuntime, proxyApiRequest } from "@/lib/api/proxy";
+import { proxyApiRequest } from "@/lib/api/proxy";
+import { isWorkers } from "@/lib/runtime";
 import { getRedis } from "@/lib/redis";
 import { withRateLimit } from "@/lib/rate-limit";
-
-const isWorkers = isWorkersRuntime;
 
 export const runtime = isWorkers ? "edge" : "nodejs";
 export const dynamic = "force-dynamic";

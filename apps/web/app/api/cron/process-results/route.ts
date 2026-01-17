@@ -1,23 +1,40 @@
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 
-import {
-  performanceLogs,
-  probeLocations,
-  streamingChecks,
-  streamingPlatforms,
-} from "@bestvpnserver/database";
-import { isWorkersRuntime, proxyApiRequest } from "@/lib/api/proxy";
+import { proxyApiRequest } from "@/lib/api/proxy";
+import { isWorkers } from "@/lib/runtime";
 import { getDb } from "@/lib/db";
 import { getRedis } from "@/lib/redis";
-
-const isWorkers = isWorkersRuntime;
 
 export const runtime = isWorkers ? "edge" : "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const BATCH_SIZE = 1000;
+
+type PlatformRow = { id: number; slug: string };
+type ProbeRow = { id: number; code: string };
+
+type PerformanceRow = {
+  serverId: number;
+  probeId: number;
+  measuredAt: Date;
+  pingMs: number | null;
+  downloadMbps: string | null;
+  uploadMbps: string | null;
+  jitterMs: number | null;
+  packetLossPct: string | null;
+  connectionSuccess: boolean;
+  connectionTimeMs: number | undefined;
+};
+
+type StreamingRow = {
+  serverId: number;
+  platformId: number;
+  checkedAt: Date;
+  isUnlocked: boolean;
+  responseTimeMs: number | undefined;
+};
 
 export async function GET(request: Request) {
   if (isWorkers) {
@@ -39,18 +56,20 @@ export async function GET(request: Request) {
   }
 
   const db = getDb();
-  const platforms = await db
-    .select({ id: streamingPlatforms.id, slug: streamingPlatforms.slug })
-    .from(streamingPlatforms);
-  const platformMap = new Map(platforms.map((p) => [p.slug, p.id]));
 
-  const probes = await db
-    .select({ id: probeLocations.id, code: probeLocations.code })
-    .from(probeLocations);
-  const probeMap = new Map(probes.map((p) => [p.code, p.id]));
+  // Use raw SQL to avoid Drizzle type conflicts
+  const platformsResult = await db.execute<PlatformRow>(
+    sql`SELECT id, slug FROM streaming_platforms`,
+  );
+  const platformMap = new Map(platformsResult.map((p) => [p.slug, p.id]));
 
-  const performanceRows: (typeof performanceLogs.$inferInsert)[] = [];
-  const streamingRows: (typeof streamingChecks.$inferInsert)[] = [];
+  const probesResult = await db.execute<ProbeRow>(
+    sql`SELECT id, code FROM probe_locations`,
+  );
+  const probeMap = new Map(probesResult.map((p) => [p.code, p.id]));
+
+  const performanceRows: PerformanceRow[] = [];
+  const streamingRows: StreamingRow[] = [];
   let skipped = 0;
 
   for (const raw of results) {
@@ -137,14 +156,31 @@ export async function GET(request: Request) {
     }
   }
 
-  await db.transaction(async (tx) => {
-    if (performanceRows.length > 0) {
-      await tx.insert(performanceLogs).values(performanceRows);
-    }
-    if (streamingRows.length > 0) {
-      await tx.insert(streamingChecks).values(streamingRows);
-    }
-  });
+  // Insert performance rows using raw SQL
+  if (performanceRows.length > 0) {
+    const perfValues = performanceRows.map(
+      (r) =>
+        sql`(${r.serverId}, ${r.probeId}, ${r.measuredAt}, ${r.pingMs}, ${r.downloadMbps}, ${r.uploadMbps}, ${r.jitterMs}, ${r.packetLossPct}, ${r.connectionSuccess}, ${r.connectionTimeMs})`,
+    );
+    await db.execute(sql`
+      INSERT INTO performance_logs
+        (server_id, probe_id, measured_at, ping_ms, download_mbps, upload_mbps, jitter_ms, packet_loss_pct, connection_success, connection_time_ms)
+      VALUES ${sql.join(perfValues, sql`, `)}
+    `);
+  }
+
+  // Insert streaming rows using raw SQL
+  if (streamingRows.length > 0) {
+    const streamValues = streamingRows.map(
+      (r) =>
+        sql`(${r.serverId}, ${r.platformId}, ${r.checkedAt}, ${r.isUnlocked}, ${r.responseTimeMs})`,
+    );
+    await db.execute(sql`
+      INSERT INTO streaming_checks
+        (server_id, platform_id, checked_at, is_unlocked, response_time_ms)
+      VALUES ${sql.join(streamValues, sql`, `)}
+    `);
+  }
 
   await getRedis().ltrim("probe:results:queue", results.length, -1);
 

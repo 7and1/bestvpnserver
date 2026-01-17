@@ -8,12 +8,12 @@ import { getOrSetCache } from "@/lib/cache/query";
 import { withRateLimit } from "@/lib/rate-limit";
 import { ServerQuerySchema } from "@/lib/validation/schemas";
 import { proxyApiRequest } from "@/lib/api/proxy";
+import { getRuntimeConfig } from "@/lib/runtime";
 
-// Detect Workers environment
-const isWorkers = typeof caches !== "undefined" && "default" in caches;
-
-export const runtime = isWorkers ? "edge" : "nodejs";
+export const runtime = getRuntimeConfig();
 export const dynamic = "force-dynamic";
+
+const isWorkers = runtime === "edge";
 
 const CACHE_TTL_SECONDS = 120;
 
@@ -32,7 +32,9 @@ export async function GET(request: NextRequest) {
     if (proxyResponse.status === 503) {
       return NextResponse.json({
         data: [],
-        pagination: { limit: 20, offset: 0 },
+        total: 0,
+        limit: 20,
+        offset: 0,
       });
     }
     return proxyResponse;
@@ -67,7 +69,9 @@ export async function GET(request: NextRequest) {
   if (!isDatabaseConfigured) {
     return NextResponse.json({
       data: [],
-      pagination: { limit, offset },
+      total: 0,
+      limit,
+      offset,
     });
   }
 
@@ -124,6 +128,17 @@ export async function GET(request: NextRequest) {
 
   const whereClause = sql`WHERE ${sql.join(conditions, sql` AND `)}`;
 
+  // Count total matching servers
+  const countQuery = sql`
+    SELECT COUNT(*) as total
+    FROM servers s
+    JOIN providers p ON s.provider_id = p.id
+    JOIN cities c ON s.city_id = c.id
+    JOIN countries co ON c.country_id = co.id
+    ${joins}
+    ${whereClause}
+  `;
+
   const query = sql`
     SELECT
       s.id,
@@ -153,10 +168,16 @@ export async function GET(request: NextRequest) {
 
   const cacheKey = buildCacheKey("servers", hashKey(parsed.data));
   const payload = await getOrSetCache(cacheKey, CACHE_TTL_SECONDS, async () => {
-    const result = await db.execute(query);
+    const [result, countResult] = await Promise.all([
+      db.execute(query),
+      db.execute(countQuery),
+    ]);
+    const total = Number(countResult[0]?.total) || 0;
     return {
       data: result,
-      pagination: { limit, offset },
+      total,
+      limit,
+      offset,
     };
   });
 

@@ -6,6 +6,7 @@ import { Building2, Clock, Globe, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ToolEducation } from "@/components/ui/collapsible";
 
 interface IPInfo {
   ip: string;
@@ -37,9 +38,11 @@ export function IPLookup() {
   if (loading) {
     return (
       <Card className="p-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="mt-4 h-4 w-full" />
-        <Skeleton className="mt-2 h-4 w-3/4" />
+        <div role="status" aria-live="polite" aria-label="Loading IP information">
+          <Skeleton className="h-8 w-48" aria-hidden="true" />
+          <Skeleton className="mt-4 h-4 w-full" aria-hidden="true" />
+          <Skeleton className="mt-2 h-4 w-3/4" aria-hidden="true" />
+        </div>
       </Card>
     );
   }
@@ -99,6 +102,26 @@ export function IPLookup() {
           </div>
         </div>
       )}
+
+      <ToolEducation>
+        <p>
+          Your IP address is like your digital return address—every website you
+          visit can see it and use it to estimate your location. This tool shows
+          exactly what information websites see when you connect.
+        </p>
+        <p>
+          When connected to a VPN, your visible IP should match the VPN server&apos;s
+          location, not your actual location. The{" "}
+          <strong className="text-foreground">VPN Detected</strong> badge
+          indicates when your IP belongs to a known VPN provider.
+        </p>
+        <p>
+          <strong className="text-foreground">What the results mean:</strong>{" "}
+          Check that the location shown matches your VPN server location. If it
+          shows your real location, your VPN may not be connected or working
+          properly.
+        </p>
+      </ToolEducation>
     </Card>
   );
 }

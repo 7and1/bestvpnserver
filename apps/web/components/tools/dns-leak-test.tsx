@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ToolEducation } from "@/components/ui/collapsible";
 
 interface Resolver {
   ip: string;
@@ -117,6 +118,29 @@ export function DNSLeakTest() {
           )}
         </div>
       )}
+
+      <ToolEducation>
+        <p>
+          When your VPN fails to route DNS queries, your ISP can still see which
+          websites you visit. Each time you enter a domain name, your browser
+          sends a DNS request to translate it into an IP address.
+        </p>
+        <p>
+          A{" "}
+          <strong className="text-foreground">
+            DNS leak occurs when these requests bypass your VPN tunnel
+          </strong>
+          , revealing your browsing activity to your internet provider even
+          though you are connected to a VPN.
+        </p>
+        <p>
+          <strong className="text-foreground">What the results mean:</strong>{" "}
+          Green (No Leak) indicates your DNS traffic is properly routed through
+          your VPN. Red (Leak Detected) means your ISP can see your browsing
+          history—try switching DNS servers or enabling your VPN&apos;s DNS leak
+          protection feature.
+        </p>
+      </ToolEducation>
     </Card>
   );
 }

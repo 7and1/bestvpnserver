@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ProviderHighlights } from "@/components/providers/provider-highlights";
 import { ProviderHighlightsSkeleton } from "@/components/providers/provider-highlights-skeleton";
 import { ServerTable } from "@/components/server-table/server-table";
+import { Badge } from "@/components/ui/badge";
 
 export const revalidate = 3600;
 
@@ -15,8 +16,13 @@ export default async function ServersIndexPage() {
   return (
     <div className="min-h-screen bg-background px-6 py-12 md:px-12">
       <div className="mx-auto max-w-6xl space-y-12">
-        <header>
-          <h1 className="text-4xl font-semibold">Global VPN Server Rankings</h1>
+        <header className="motion-safe:animate-fade-in-up">
+          <Badge variant="secondary" className="rounded-full px-4 py-1">
+            Live leaderboard
+          </Badge>
+          <h1 className="mt-4 text-4xl font-semibold">
+            Global VPN Server Rankings
+          </h1>
           <p className="mt-3 text-muted-foreground">
             Browse the fastest servers ranked by live probe telemetry.
           </p>

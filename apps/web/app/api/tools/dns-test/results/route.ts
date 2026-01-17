@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { isWorkersRuntime, proxyApiRequest } from "@/lib/api/proxy";
+import { proxyApiRequest } from "@/lib/api/proxy";
+import { isWorkers } from "@/lib/runtime";
 import { getRedis } from "@/lib/redis";
 import { withRateLimit } from "@/lib/rate-limit";
 import { DnsTestIdSchema } from "@/lib/validation/schemas";
-
-const isWorkers = isWorkersRuntime;
 
 export const runtime = isWorkers ? "edge" : "nodejs";
 export const dynamic = "force-dynamic";

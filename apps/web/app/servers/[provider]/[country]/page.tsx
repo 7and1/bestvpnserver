@@ -77,7 +77,7 @@ export default async function ProviderCountryPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef] px-6 py-12 md:px-12">
+    <div className="min-h-screen bg-background px-6 py-12 md:px-12">
       <JsonLd data={schema} />
       <div className="mx-auto max-w-6xl space-y-10">
         <div className="space-y-3">

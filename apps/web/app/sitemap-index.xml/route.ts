@@ -1,18 +1,18 @@
 import { sql } from "drizzle-orm";
 
-import { providers } from "@bestvpnserver/database";
 import { getDb } from "@/lib/db";
 import { isDatabaseConfigured } from "@/lib/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type ProviderRow = { slug: string; updated_at: Date | null };
+
 export async function GET() {
-  const providerRows = isDatabaseConfigured
-    ? await getDb()
-        .select({ slug: providers.slug, updatedAt: providers.updatedAt })
-        .from(providers)
-        .where(sql`${providers.isActive} = true`)
+  const providerRows: ProviderRow[] = isDatabaseConfigured
+    ? await getDb().execute<ProviderRow>(
+        sql`SELECT slug, updated_at FROM providers WHERE is_active = true`,
+      )
     : [];
 
   const lastUpdate = new Date().toISOString();
@@ -21,7 +21,7 @@ export async function GET() {
     { loc: "/sitemap-core.xml", lastmod: lastUpdate },
     ...providerRows.map((p) => ({
       loc: `/sitemap-${p.slug}.xml`,
-      lastmod: p.updatedAt ? new Date(p.updatedAt).toISOString() : lastUpdate,
+      lastmod: p.updated_at ? new Date(p.updated_at).toISOString() : lastUpdate,
     })),
     { loc: "/sitemap-status.xml", lastmod: lastUpdate },
     { loc: "/sitemap-use-cases.xml", lastmod: lastUpdate },

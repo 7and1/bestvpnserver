@@ -29,6 +29,12 @@ export async function fetchProviderSummary(
       p.website_url,
       p.affiliate_link,
       p.logo_url,
+      p.founded_year,
+      p.headquarters,
+      p.protocols,
+      p.refund_policy,
+      p.device_limit,
+      p.pricing_tier,
       COUNT(DISTINCT s.id) AS server_count,
       COUNT(DISTINCT co.id) AS country_count,
       COUNT(DISTINCT c.id) AS city_count,
@@ -56,6 +62,12 @@ export async function fetchProviderSummary(
         website_url: string | null;
         affiliate_link: string | null;
         logo_url: string | null;
+        founded_year: number | null;
+        headquarters: string | null;
+        protocols: string | null;
+        refund_policy: string | null;
+        device_limit: string | null;
+        pricing_tier: string | null;
         server_count: string | number | null;
         country_count: string | number | null;
         city_count: string | number | null;
@@ -86,6 +98,12 @@ export async function fetchProviderSummary(
     lastMeasured: row.last_measured
       ? new Date(row.last_measured).toISOString()
       : null,
+    foundedYear: row.founded_year ?? null,
+    headquarters: row.headquarters ?? null,
+    protocols: row.protocols ?? null,
+    refundPolicy: row.refund_policy ?? null,
+    deviceLimit: row.device_limit ?? null,
+    pricingTier: row.pricing_tier ?? null,
   };
 }
 
@@ -147,6 +165,117 @@ export type ProviderHighlight = ProviderSummary & {
   rank: number;
 };
 
+export async function getTopProviderHighlightsBatch(
+  limit = 6,
+  countryCode?: string,
+): Promise<ProviderHighlight[]> {
+  if (!isDatabaseConfigured) return [];
+
+  const db = getDb();
+  const countryFilter = countryCode
+    ? sql`AND lower(co.iso_code) = ${countryCode.toLowerCase()}`
+    : sql``;
+
+  const result = await db.execute(sql`
+    WITH ranked_providers AS (
+      SELECT
+        p.id,
+        p.name,
+        p.slug,
+        p.website_url,
+        p.affiliate_link,
+        p.logo_url,
+        p.founded_year,
+        p.headquarters,
+        p.protocols,
+        p.refund_policy,
+        p.device_limit,
+        p.pricing_tier,
+        COUNT(DISTINCT s.id) FILTER (WHERE s.is_active) AS server_count,
+        AVG(lp.download_mbps) AS avg_download,
+        AVG(lp.ping_ms) AS avg_ping,
+        AVG(lp.upload_mbps) AS avg_upload,
+        AVG(CASE WHEN lp.connection_success THEN 1 ELSE 0 END) * 100 AS uptime_pct,
+        MAX(lp.measured_at) AS last_measured,
+        ROW_NUMBER() OVER (ORDER BY AVG(lp.download_mbps) DESC NULLS LAST) AS rank
+      FROM providers p
+      LEFT JOIN servers s ON s.provider_id = p.id
+      LEFT JOIN cities c ON c.id = s.city_id
+      LEFT JOIN countries co ON co.id = c.country_id
+      LEFT JOIN mv_server_latest_performance lp ON lp.server_id = s.id
+      WHERE p.is_active = true
+        ${countryFilter}
+      GROUP BY p.id, p.name, p.slug, p.website_url, p.affiliate_link, p.logo_url,
+               p.founded_year, p.headquarters, p.protocols, p.refund_policy,
+               p.device_limit, p.pricing_tier
+      LIMIT ${limit}
+    )
+    SELECT
+      rp.*,
+      COUNT(DISTINCT co.id) AS country_count,
+      COUNT(DISTINCT c.id) AS city_count
+    FROM ranked_providers rp
+    LEFT JOIN servers s ON s.provider_id = rp.id AND s.is_active = true
+    LEFT JOIN cities c ON c.id = s.city_id
+    LEFT JOIN countries co ON co.id = c.country_id
+    GROUP BY rp.id, rp.name, rp.slug, rp.website_url, rp.affiliate_link, rp.logo_url,
+             rp.founded_year, rp.headquarters, rp.protocols, rp.refund_policy,
+             rp.device_limit, rp.pricing_tier, rp.server_count, rp.avg_download,
+             rp.avg_ping, rp.avg_upload, rp.uptime_pct, rp.last_measured, rp.rank
+    ORDER BY rp.rank
+  `);
+
+  return (
+    result as unknown as {
+      id: number;
+      name: string;
+      slug: string;
+      website_url: string | null;
+      affiliate_link: string | null;
+      logo_url: string | null;
+      founded_year: number | null;
+      headquarters: string | null;
+      protocols: string | null;
+      refund_policy: string | null;
+      device_limit: string | null;
+      pricing_tier: string | null;
+      server_count: string | number | null;
+      country_count: string | number | null;
+      city_count: string | number | null;
+      avg_download: string | number | null;
+      avg_ping: string | number | null;
+      avg_upload: string | number | null;
+      uptime_pct: string | number | null;
+      last_measured: Date | string | null;
+      rank: number;
+    }[]
+  ).map((row) => ({
+    providerId: row.id,
+    name: row.name,
+    slug: row.slug,
+    websiteUrl: row.website_url,
+    affiliateLink: row.affiliate_link,
+    logoUrl: row.logo_url,
+    foundedYear: row.founded_year,
+    headquarters: row.headquarters,
+    protocols: row.protocols,
+    refundPolicy: row.refund_policy,
+    deviceLimit: row.device_limit,
+    pricingTier: row.pricing_tier,
+    serverCount: Number(row.server_count ?? 0),
+    countryCount: Number(row.country_count ?? 0),
+    cityCount: Number(row.city_count ?? 0),
+    avgPing: toNumber(row.avg_ping),
+    avgDownload: toNumber(row.avg_download),
+    avgUpload: toNumber(row.avg_upload),
+    uptimePct: toNumber(row.uptime_pct),
+    lastMeasured: row.last_measured
+      ? new Date(row.last_measured).toISOString()
+      : null,
+    rank: row.rank,
+  }));
+}
+
 export async function getTopProviderHighlights(
   limit = 6,
   countryCode?: string,
@@ -186,6 +315,12 @@ export async function getTopProviderHighlights(
       avgUpload: null,
       uptimePct: provider.uptimePct,
       lastMeasured: null,
+      foundedYear: null,
+      headquarters: null,
+      protocols: null,
+      refundPolicy: null,
+      deviceLimit: null,
+      pricingTier: null,
       rank: index + 1,
     };
   });

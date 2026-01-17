@@ -3,6 +3,8 @@ import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import { Providers } from "@/app/providers";
+import { SITE_URL } from "@/lib/site";
 
 import "./globals.css";
 
@@ -16,9 +18,6 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
   subsets: ["latin"],
 });
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://bestvpnserver.com";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -69,7 +68,7 @@ export const metadata: Metadata = {
       "Real-time VPN server rankings powered by global probe telemetry. Find the fastest servers for streaming, gaming, and privacy.",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.svg",
         width: 1200,
         height: 630,
         alt: "BestVPNServer.com - VPN Performance Monitoring",
@@ -81,7 +80,7 @@ export const metadata: Metadata = {
     title: "BestVPNServer.com - Data-Driven VPN Monitoring",
     description:
       "Real-time VPN server rankings powered by global probe telemetry.",
-    images: ["/og-image.png"],
+    images: ["/og-image.svg"],
   },
   alternates: {
     canonical: SITE_URL,
@@ -92,6 +91,25 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "BestVPNServer.com",
+  url: SITE_URL,
+  logo: `${SITE_URL}/og-image.svg`,
+  description:
+    "Data-driven VPN monitoring platform with real-time performance metrics, speed tests, and server rankings from global probe telemetry.",
+  sameAs: [
+    "https://twitter.com/bestvpnserver",
+    "https://github.com/bestvpnserver",
+  ],
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer service",
+    url: `${SITE_URL}/contact`,
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -99,20 +117,30 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationSchema),
+          }}
+        />
+      </head>
       <body
         className={`${spaceGrotesk.variable} ${plexMono.variable} antialiased min-h-screen flex flex-col`}
       >
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-primary focus:text-primary-foreground"
-        >
-          Skip to main content
-        </a>
-        <Header />
-        <main id="main-content" className="flex-1">
-          {children}
-        </main>
-        <Footer />
+        <Providers>
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-primary focus:text-primary-foreground"
+          >
+            Skip to main content
+          </a>
+          <Header />
+          <main id="main-content" className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );

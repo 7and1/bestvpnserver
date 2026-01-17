@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ToolEducation } from "@/components/ui/collapsible";
 
 interface IPResult {
   ip: string;
@@ -125,6 +126,29 @@ export function WebRTCLeakTest() {
           <li>Use privacy extensions like uBlock Origin.</li>
         </ul>
       </div>
+
+      <ToolEducation>
+        <p>
+          WebRTC is a browser technology that enables real-time communication like
+          video chats and file sharing. However, it can{" "}
+          <strong className="text-foreground">
+            leak your real IP address even when connected to a VPN
+          </strong>
+          by bypassing the VPN tunnel to establish direct connections.
+        </p>
+        <p>
+          This happens because WebRTC asks STUN servers to discover your public
+          address, which can reveal your actual location and identity to websites
+          and online services.
+        </p>
+        <p>
+          <strong className="text-foreground">What the results mean:</strong> If
+          the test shows public IPs different from your VPN IP, you have a WebRTC
+          leak. Consider using a VPN with WebRTC leak protection, disabling
+          WebRTC in your browser, or installing a privacy-focused browser
+          extension.
+        </p>
+      </ToolEducation>
     </Card>
   );
 }

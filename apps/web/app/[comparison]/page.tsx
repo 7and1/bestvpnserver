@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Crown } from "lucide-react";
 
 import { JsonLd } from "@/components/seo/json-ld";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,15 @@ type ComparisonResult = {
   right: string;
   useCase: UseCase | null;
 };
+
+function getWinner(left: number | null, right: number | null, higherIsBetter: boolean): 'left' | 'right' | 'tie' {
+  if (left === null || right === null) return 'tie';
+  if (left === right) return 'tie';
+  if (higherIsBetter) {
+    return left > right ? 'left' : 'right';
+  }
+  return left < right ? 'left' : 'right';
+}
 
 function parseComparisonSlug(slug: string): ComparisonResult | null {
   const normalized = slug.toLowerCase();
@@ -108,35 +118,56 @@ export default async function ComparisonPage({
     ],
   };
 
+  const downloadWinner = getWinner(leftSummary.avgDownload, rightSummary.avgDownload, true);
+  const latencyWinner = getWinner(leftSummary.avgPing, rightSummary.avgPing, false);
+  const uptimeWinner = getWinner(leftSummary.uptimePct, rightSummary.uptimePct, true);
+  const serversWinner = getWinner(leftSummary.serverCount, rightSummary.serverCount, true);
+
   const metrics = [
     {
       label: "Avg download",
+      leftValue: leftSummary.avgDownload,
+      rightValue: rightSummary.avgDownload,
       left: formatMetric(leftSummary.avgDownload, "Mbps"),
       right: formatMetric(rightSummary.avgDownload, "Mbps"),
+      winner: downloadWinner,
+      higherIsBetter: true,
     },
     {
       label: "Avg latency",
+      leftValue: leftSummary.avgPing,
+      rightValue: rightSummary.avgPing,
       left: formatMetric(leftSummary.avgPing, "ms", 0),
       right: formatMetric(rightSummary.avgPing, "ms", 0),
+      winner: latencyWinner,
+      higherIsBetter: false,
     },
     {
       label: "Uptime",
+      leftValue: leftSummary.uptimePct,
+      rightValue: rightSummary.uptimePct,
       left: leftSummary.uptimePct
         ? `${leftSummary.uptimePct.toFixed(1)}%`
         : "-",
       right: rightSummary.uptimePct
         ? `${rightSummary.uptimePct.toFixed(1)}%`
         : "-",
+      winner: uptimeWinner,
+      higherIsBetter: true,
     },
     {
       label: "Servers monitored",
+      leftValue: leftSummary.serverCount,
+      rightValue: rightSummary.serverCount,
       left: leftSummary.serverCount.toLocaleString(),
       right: rightSummary.serverCount.toLocaleString(),
+      winner: serversWinner,
+      higherIsBetter: true,
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef] px-6 py-12 md:px-12">
+    <div className="min-h-screen bg-background px-6 py-12 md:px-12">
       <JsonLd data={schema} />
       <div className="mx-auto max-w-6xl space-y-10">
         <div className="space-y-3">
@@ -208,8 +239,30 @@ export default async function ComparisonPage({
                     {metric.label}
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-3 text-sm font-semibold">
-                    <span>{metric.left}</span>
-                    <span>{metric.right}</span>
+                    <span
+                      className={
+                        metric.winner === 'left'
+                          ? 'text-emerald-600 flex items-center gap-1'
+                          : metric.winner === 'right'
+                            ? 'text-muted-foreground'
+                            : ''
+                      }
+                    >
+                      {metric.winner === 'left' && <Crown className="h-3.5 w-3.5" />}
+                      {metric.left}
+                    </span>
+                    <span
+                      className={
+                        metric.winner === 'right'
+                          ? 'text-emerald-600 flex items-center gap-1 justify-end'
+                          : metric.winner === 'left'
+                            ? 'text-muted-foreground justify-end'
+                            : 'justify-end'
+                      }
+                    >
+                      {metric.right}
+                      {metric.winner === 'right' && <Crown className="h-3.5 w-3.5" />}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -261,7 +314,122 @@ export default async function ComparisonPage({
             </Card>
           )}
         </section>
+
+        <RelatedComparisons
+          leftSlug={parsed.left}
+          rightSlug={parsed.right}
+          useCase={parsed.useCase}
+          currentSlug={params.comparison}
+        />
       </div>
     </div>
+  );
+}
+
+type RelatedComparisonProps = {
+  leftSlug: string;
+  rightSlug: string;
+  useCase: UseCase | null;
+  currentSlug: string;
+};
+
+async function RelatedComparisons({
+  leftSlug,
+  rightSlug,
+  useCase,
+  currentSlug,
+}: RelatedComparisonProps) {
+  const useCaseSuffix = useCase ? `-${useCase.slug}` : "";
+
+  const relatedSlugs = [
+    `${leftSlug}-vs-nordvpn${useCaseSuffix}`,
+    `${leftSlug}-vs-expressvpn${useCaseSuffix}`,
+    `${leftSlug}-vs-surfshark${useCaseSuffix}`,
+    `nordvpn-vs-${rightSlug}${useCaseSuffix}`,
+    `expressvpn-vs-${rightSlug}${useCaseSuffix}`,
+    `surfshark-vs-${rightSlug}${useCaseSuffix}`,
+  ];
+
+  const filteredSlugs = relatedSlugs
+    .filter((slug) => slug !== currentSlug.toLowerCase())
+    .slice(0, 6);
+
+  if (filteredSlugs.length === 0) return null;
+
+  const relatedData = await Promise.all(
+    filteredSlugs.map(async (slug) => {
+      const parsed = parseComparisonSlug(slug);
+      if (!parsed) return null;
+
+      const [leftSummary, rightSummary] = await Promise.all([
+        getProviderSummaryCached(parsed.left),
+        getProviderSummaryCached(parsed.right),
+      ]);
+
+      if (!leftSummary || !rightSummary) return null;
+
+      return {
+        slug,
+        leftName: leftSummary.name,
+        rightName: rightSummary.name,
+        leftLogo: leftSummary.logoUrl,
+        rightLogo: rightSummary.logoUrl,
+      };
+    }),
+  );
+
+  const validComparisons = relatedData.filter(
+    (data): data is NonNullable<typeof data> => data !== null,
+  );
+
+  if (validComparisons.length === 0) return null;
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-xl font-semibold">You might also compare</h2>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {validComparisons.map((comparison) => (
+          <Card
+            key={comparison.slug}
+            className="group bg-white/80 transition-shadow hover:shadow-md"
+          >
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-1 items-center gap-2">
+                  {comparison.leftLogo && (
+                    <img
+                      src={comparison.leftLogo}
+                      alt={comparison.leftName}
+                      className="h-8 w-8 rounded object-contain"
+                    />
+                  )}
+                  <span className="text-sm font-medium">
+                    {comparison.leftName}
+                  </span>
+                </div>
+                <span className="text-muted-foreground text-xs">vs</span>
+                <div className="flex flex-1 items-center justify-end gap-2">
+                  <span className="text-sm font-medium">
+                    {comparison.rightName}
+                  </span>
+                  {comparison.rightLogo && (
+                    <img
+                      src={comparison.rightLogo}
+                      alt={comparison.rightName}
+                      className="h-8 w-8 rounded object-contain"
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="mt-4">
+                <Button variant="outline" size="sm" className="w-full" asChild>
+                  <Link href={`/${comparison.slug}`}>Compare</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
   );
 }

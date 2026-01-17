@@ -61,7 +61,7 @@ export default async function ProviderStatusPage({
     : null;
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef] px-6 py-12 md:px-12">
+    <div className="min-h-screen bg-background px-6 py-12 md:px-12">
       <JsonLd data={schema} />
       <div className="mx-auto max-w-5xl space-y-10">
         <div className="space-y-3">

@@ -1,9 +1,11 @@
-# Project Lighthouse - Documentation Index
+# Documentation - BestVPNServer.com
 
 ## Quick Links
 
 | Document                                         | Description                                    |
 | ------------------------------------------------ | ---------------------------------------------- |
+| [DEVELOPMENT.md](./DEVELOPMENT.md)               | Local development setup and workflow           |
+| [API-REFERENCE.md](./API-REFERENCE.md)           | Complete API endpoint documentation            |
 | [PROJECT-LIGHTHOUSE.md](./PROJECT-LIGHTHOUSE.md) | Master architecture document - start here      |
 | [DATABASE-SCHEMA.md](./DATABASE-SCHEMA.md)       | PostgreSQL schema, indexes, materialized views |
 | [PROBE-NETWORK.md](./PROBE-NETWORK.md)           | Distributed probe infrastructure (Go + Fly.io) |
@@ -125,6 +127,17 @@ cd probes && go run cmd/probe/main.go
 
 ---
 
-**Version**: 1.0
-**Last Updated**: 2026-01-12
-**Status**: Architecture Complete - Ready for Implementation
+## Additional Resources
+
+| Resource                          | Description                              |
+| --------------------------------- | ---------------------------------------- |
+| [../README.md](../README.md)      | Project overview and quick start         |
+| [../DEPLOYMENT.md](../DEPLOYMENT.md) | Complete deployment guide              |
+| [../ARCHITECTURE.md](../ARCHITECTURE.md) | System architecture documentation    |
+| [../deploy.sh](../deploy.sh)      | Automated deployment script              |
+
+---
+
+**Version**: 2.0.0
+**Last Updated**: 2026-01-17
+**Status**: Production Ready

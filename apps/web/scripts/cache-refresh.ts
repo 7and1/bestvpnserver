@@ -1,12 +1,6 @@
 import "dotenv/config";
 import { sql } from "drizzle-orm";
 
-import {
-  providers,
-  streamingChecks,
-  streamingPlatforms,
-  servers,
-} from "@bestvpnserver/database";
 import { fetchProviderSummary } from "@/lib/data/providers";
 import { closeDb, getDb } from "@/lib/db";
 import { getRedis } from "@/lib/redis";
@@ -14,14 +8,17 @@ import { getRedis } from "@/lib/redis";
 const PROVIDER_TTL = 60 * 60;
 const STREAMING_TTL = 30 * 60;
 
+type ProviderRow = { slug: string };
+type PlatformRow = { id: number; slug: string };
+type ServerIdRow = { id: number };
+
 async function refreshProviderSummaries() {
   const db = getDb();
   const redis = getRedis();
 
-  const rows = await db
-    .select({ slug: providers.slug })
-    .from(providers)
-    .where(sql`${providers.isActive} = true`);
+  const rows = await db.execute<ProviderRow>(
+    sql`SELECT slug FROM providers WHERE is_active = true`,
+  );
 
   for (const row of rows) {
     const summary = await fetchProviderSummary(row.slug);
@@ -41,15 +38,15 @@ async function refreshStreamingCaches() {
   const db = getDb();
   const redis = getRedis();
 
-  const platforms = await db
-    .select({ id: streamingPlatforms.id, slug: streamingPlatforms.slug })
-    .from(streamingPlatforms);
+  const platforms = await db.execute<PlatformRow>(
+    sql`SELECT id, slug FROM streaming_platforms`,
+  );
 
   for (const platform of platforms) {
-    const rows = await db.execute(sql`
+    const rows = await db.execute<ServerIdRow>(sql`
       SELECT DISTINCT s.id
-      FROM ${streamingChecks} sc
-      JOIN ${servers} s ON sc.server_id = s.id
+      FROM streaming_checks sc
+      JOIN servers s ON sc.server_id = s.id
       WHERE sc.platform_id = ${platform.id}
         AND sc.is_unlocked = true
         AND sc.checked_at >= now() - interval '24 hours'
@@ -58,9 +55,7 @@ async function refreshStreamingCaches() {
     const key = `streaming:${platform.slug}:servers`;
     await redis.del(key);
 
-    const ids = (rows as unknown as { id: number }[]).map((row) =>
-      row.id.toString(),
-    );
+    const ids = rows.map((row) => row.id.toString());
     if (ids.length > 0) {
       const [first, ...rest] = ids;
       await redis.sadd(key, first, ...rest);

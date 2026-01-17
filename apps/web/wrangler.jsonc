@@ -15,6 +15,7 @@
     },
   ],
   "vars": {
+    "BACKEND_URL": "https://api.bestvpnserver.com",
     "NODE_ENV": "production",
   },
 }

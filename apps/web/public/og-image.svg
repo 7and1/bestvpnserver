@@ -1,0 +1,69 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="accent-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#186d85"/>
+      <stop offset="100%" style="stop-color:#f59e0b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-gradient)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="100" cy="100" r="200" fill="#186d85" opacity="0.15"/>
+  <circle cx="1100" cy="530" r="180" fill="#f59e0b" opacity="0.12"/>
+  <circle cx="600" cy="315" r="300" fill="url(#accent-gradient)" opacity="0.05"/>
+
+  <!-- Globe icon representation -->
+  <g transform="translate(100, 160)" opacity="0.3">
+    <circle cx="60" cy="60" r="50" fill="none" stroke="#186d85" stroke-width="2"/>
+    <ellipse cx="60" cy="60" rx="50" ry="20" fill="none" stroke="#186d85" stroke-width="1.5"/>
+    <ellipse cx="60" cy="60" rx="25" ry="50" fill="none" stroke="#186d85" stroke-width="1.5"/>
+    <line x1="60" y1="10" x2="60" y2="110" stroke="#186d85" stroke-width="1.5"/>
+  </g>
+
+  <!-- Main content -->
+  <text x="100" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="#ffffff">
+    BestVPNServer.com
+  </text>
+
+  <text x="100" y="350" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="400" fill="#94a3b8">
+    Data-Driven VPN Monitoring
+  </text>
+
+  <!-- Accent line -->
+  <rect x="100" y="380" width="200" height="4" fill="url(#accent-gradient)" rx="2"/>
+
+  <!-- Stats badges -->
+  <g transform="translate(100, 430)">
+    <rect width="180" height="80" rx="12" fill="#ffffff" opacity="0.1"/>
+    <text x="90" y="35" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#ffffff" text-anchor="middle">50K+</text>
+    <text x="90" y="60" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#94a3b8" text-anchor="middle">Servers Tracked</text>
+  </g>
+
+  <g transform="translate(300, 430)">
+    <rect width="180" height="80" rx="12" fill="#ffffff" opacity="0.1"/>
+    <text x="90" y="35" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#ffffff" text-anchor="middle">8 Regions</text>
+    <text x="90" y="60" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#94a3b8" text-anchor="middle">Global Probes</text>
+  </g>
+
+  <g transform="translate(500, 430)">
+    <rect width="180" height="80" rx="12" fill="#ffffff" opacity="0.1"/>
+    <text x="90" y="35" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#ffffff" text-anchor="middle">80K</text>
+    <text x="90" y="60" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#94a3b8" text-anchor="middle">Daily Measurements</text>
+  </g>
+
+  <!-- Tagline -->
+  <text x="100" y="570" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#64748b">
+    Real-time performance metrics from global probe telemetry
+  </text>
+
+  <!-- URL -->
+  <text x="1100" y="570" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#475569" text-anchor="end">
+    bestvpnserver.com
+  </text>
+</svg>

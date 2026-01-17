@@ -16,8 +16,12 @@ services:
       - "8880:3000"
     networks:
       - supabase-tier
+      - proxy-tier
 
 networks:
   supabase-tier:
     external: true
     name: supabase_default
+  proxy-tier:
+    external: true
+    name: nginx-proxy_default

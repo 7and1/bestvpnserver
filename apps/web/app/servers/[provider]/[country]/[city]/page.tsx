@@ -120,7 +120,7 @@ export default async function ProviderCityPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef] px-6 py-12 md:px-12">
+    <div className="min-h-screen bg-background px-6 py-12 md:px-12">
       <JsonLd data={schema} />
       <div className="mx-auto max-w-6xl space-y-10">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

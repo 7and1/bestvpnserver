@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { ToolEducation } from "@/components/ui/collapsible";
 
 interface SpeedResult {
   download: number;
@@ -90,13 +91,13 @@ export function SpeedTest() {
       </div>
 
       {testing && (
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 space-y-2" role="status" aria-live="polite">
           <div className="text-sm text-muted-foreground">
             {phase === "latency" && "Measuring latency"}
             {phase === "download" && "Measuring download speed"}
             {phase === "upload" && "Measuring upload speed"}
           </div>
-          <Progress value={progress} />
+          <Progress value={progress} aria-label={`Speed test progress: ${progress}%`} />
         </div>
       )}
 
@@ -122,6 +123,29 @@ export function SpeedTest() {
           </div>
         </div>
       )}
+
+      <ToolEducation>
+        <p>
+          VPN speed varies significantly based on server location, encryption
+          overhead, and your original connection speed. This test measures your
+          actual connection speed through the current VPN server to help you
+          understand real-world performance.
+        </p>
+        <p>
+          <strong className="text-foreground">Latency</strong> (ping) affects
+          gaming and video calls—lower is better.{" "}
+          <strong className="text-foreground">Download speed</strong> impacts
+          streaming and browsing.{" "}
+          <strong className="text-foreground">Upload speed</strong> matters for
+          video calls and file sharing.
+        </p>
+        <p>
+          <strong className="text-foreground">What the results mean:</strong> If
+          speeds are much slower than your base connection, try connecting to a
+          less crowded server or one closer to your physical location. Some
+          speed reduction is normal due to encryption routing.
+        </p>
+      </ToolEducation>
     </Card>
   );
 }

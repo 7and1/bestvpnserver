@@ -8,8 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { swrFetcher } from "@/lib/api/fetcher";
 
 type ProviderHighlight = {
   providerId: number;
@@ -74,7 +73,7 @@ export function ProviderHighlights({
 }) {
   const { data: providers, isLoading } = useSWR<ProviderHighlight[]>(
     `/api/providers/highlights?limit=${limit}`,
-    fetcher,
+    swrFetcher,
   );
 
   return (
@@ -93,16 +92,16 @@ export function ProviderHighlights({
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" role="status" aria-live="polite" aria-label="Loading provider highlights">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="bg-white/80">
+            <Card key={i} className="border-foreground/10 bg-white/80">
               <CardContent className="p-6">
-                <Skeleton className="mb-4 h-5 w-24" />
+                <Skeleton className="mb-4 h-5 w-24" aria-hidden="true" />
                 <div className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-10 w-10 rounded-full" aria-hidden="true" />
                   <div className="space-y-2">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-5 w-32" aria-hidden="true" />
+                    <Skeleton className="h-4 w-24" aria-hidden="true" />
                   </div>
                 </div>
               </CardContent>
@@ -110,96 +109,106 @@ export function ProviderHighlights({
           ))}
         </div>
       ) : !providers || providers.length === 0 ? (
-        <Card className="bg-white/80">
+        <Card className="border-foreground/10 bg-white/80">
           <CardContent className="p-6 text-sm text-muted-foreground">
             Provider telemetry will appear once probes begin reporting.
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {providers.map((provider, index) => (
-            <Card key={provider.providerId} className="bg-white/80">
-              <CardContent className="flex h-full flex-col gap-4 p-6">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                    Rank #{provider.rank ?? index + 1}
+          {providers.map((provider, index) => {
+            const isTop = (provider.rank ?? index + 1) === 1;
+            return (
+              <Card
+                key={provider.providerId}
+                className={`border-foreground/10 bg-white/80 ${
+                  isTop ? "shadow-lg ring-1 ring-primary/30" : ""
+                }`}
+              >
+                <CardContent className="flex h-full flex-col gap-4 p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      Rank #{provider.rank ?? index + 1}
+                    </div>
+                    <Badge variant="outline">
+                      {provider.serverCount} servers
+                    </Badge>
                   </div>
-                  <Badge variant="outline">
-                    {provider.serverCount} servers
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/60 text-xs font-semibold"
-                    style={
-                      provider.logoUrl
-                        ? {
-                            backgroundImage: `url(${provider.logoUrl})`,
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
-                          }
-                        : undefined
-                    }
-                    role="img"
-                    aria-label={`${provider.name} logo`}
-                  >
-                    {!provider.logoUrl && (
-                      <span>{getInitials(provider.name)}</span>
-                    )}
-                  </div>
-                  <div>
-                    <div className="text-lg font-semibold">{provider.name}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {formatCoverage(
-                        provider.countryCount,
-                        provider.cityCount,
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/60 text-xs font-semibold"
+                      style={
+                        provider.logoUrl
+                          ? {
+                              backgroundImage: `url(${provider.logoUrl})`,
+                              backgroundSize: "cover",
+                              backgroundPosition: "center",
+                            }
+                          : undefined
+                      }
+                      role="img"
+                      aria-label={`${provider.name} logo`}
+                    >
+                      {!provider.logoUrl && (
+                        <span>{getInitials(provider.name)}</span>
                       )}
                     </div>
+                    <div>
+                      <div className="text-lg font-semibold">
+                        {provider.name}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {formatCoverage(
+                          provider.countryCount,
+                          provider.cityCount,
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Avg download {formatMetric(provider.avgDownload, "Mbps")}
-                </div>
-                <div className="grid gap-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Latency</span>
-                    <span className="font-medium">
-                      {formatMetric(provider.avgPing, "ms", 0)}
-                    </span>
+                  <div className="text-sm text-muted-foreground">
+                    Avg download {formatMetric(provider.avgDownload, "Mbps")}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Uptime</span>
-                    <span className="font-medium">
-                      {provider.uptimePct
-                        ? `${provider.uptimePct.toFixed(1)}%`
-                        : "-"}
-                    </span>
+                  <div className="grid gap-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Latency</span>
+                      <span className="font-medium">
+                        {formatMetric(provider.avgPing, "ms", 0)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Uptime</span>
+                      <span className="font-medium">
+                        {provider.uptimePct
+                          ? `${provider.uptimePct.toFixed(1)}%`
+                          : "-"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Last check</span>
+                      <span className="font-medium">
+                        {formatDate(provider.lastMeasured)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Last check</span>
-                    <span className="font-medium">
-                      {formatDate(provider.lastMeasured)}
-                    </span>
+                  <div className="mt-auto">
+                    <Button asChild>
+                      <Link
+                        href={
+                          provider.affiliateLink
+                            ? `/go/${provider.slug}`
+                            : `/servers/${provider.slug}`
+                        }
+                      >
+                        {provider.affiliateLink
+                          ? `Get ${provider.name}`
+                          : "View provider"}
+                      </Link>
+                    </Button>
                   </div>
-                </div>
-                <div className="mt-auto">
-                  <Button asChild>
-                    <Link
-                      href={
-                        provider.affiliateLink
-                          ? `/go/${provider.slug}`
-                          : `/servers/${provider.slug}`
-                      }
-                    >
-                      {provider.affiliateLink
-                        ? `Get ${provider.name}`
-                        : "View provider"}
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </section>

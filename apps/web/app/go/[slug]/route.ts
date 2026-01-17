@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
-import { providers } from "@bestvpnserver/database";
 import { isDatabaseConfigured } from "@/lib/env";
 import { getDb } from "@/lib/db";
 import { getAffiliateLink } from "@/lib/affiliate-links";
@@ -9,6 +8,8 @@ import { withRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+type ProviderRow = { affiliate_link: string | null };
 
 function normalizeSlug(slug: string) {
   return slug.toLowerCase();
@@ -46,13 +47,11 @@ export async function GET(
   }
 
   const db = getDb();
-  const rows = await db
-    .select({ affiliateLink: providers.affiliateLink })
-    .from(providers)
-    .where(eq(providers.slug, slug))
-    .limit(1);
+  const rows = await db.execute<ProviderRow>(
+    sql`SELECT affiliate_link FROM providers WHERE slug = ${slug} LIMIT 1`,
+  );
 
-  const target = rows[0]?.affiliateLink ?? null;
+  const target = rows[0]?.affiliate_link ?? null;
 
   if (!target || !isSafeUrl(target)) {
     return NextResponse.json(

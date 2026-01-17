@@ -11,3 +11,6 @@ wrangler.toml
 .env
 .env.*
 apps/web/.codex-temp
+CLAUDE.md
+.claude/
+docs/reviews/

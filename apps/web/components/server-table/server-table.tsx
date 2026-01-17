@@ -20,9 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { swrFetcher } from "@/lib/api/fetcher";
 
 type ServerRow = {
   id: number;
@@ -65,7 +64,7 @@ export function ServerTable({ query }: { query?: Record<string, string> }) {
 
   const { data, isLoading, error } = useSWR(
     `/api/servers?${params.toString()}`,
-    fetcher,
+    swrFetcher,
     { refreshInterval: 30000 },
   );
 
@@ -122,36 +121,22 @@ export function ServerTable({ query }: { query?: Record<string, string> }) {
     getCoreRowModel: getCoreRowModel(),
   });
 
+  const total = data?.total ?? 0;
   const hasData = data?.data && data.data.length > 0;
-  const hasNextPage = data?.data?.length === PAGE_SIZE;
+  const hasNextPage = (page + 1) * PAGE_SIZE < total;
   const hasPrevPage = page > 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const currentPage = page + 1;
+  const startItem = total > 0 ? offset + 1 : 0;
+  const endItem = Math.min(offset + (data?.data?.length || 0), total);
 
   if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-8 w-24" />
-        </div>
-        <div className="rounded-xl border border-border/60 overflow-hidden">
-          <div className="h-10 bg-muted/50" />
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex gap-4 border-t border-border/40 p-4">
-              <Skeleton className="h-5 w-24" />
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-5 w-16" />
-              <Skeleton className="h-5 w-20" />
-              <Skeleton className="h-5 w-16" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <TableSkeleton rows={5} columns={5} />;
   }
 
   if (error || data?.error) {
     return (
-      <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+      <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center" role="alert" aria-live="assertive">
         <p className="text-sm text-destructive">
           Failed to load servers. Please try again shortly.
         </p>
@@ -169,7 +154,7 @@ export function ServerTable({ query }: { query?: Record<string, string> }) {
 
   if (!hasData) {
     return (
-      <div className="rounded-xl border border-border/60 bg-muted/20 p-12 text-center">
+      <div className="rounded-2xl border border-foreground/10 bg-white/70 p-12 text-center">
         <div className="mx-auto max-w-md space-y-4">
           <h3 className="text-lg font-semibold">No servers found</h3>
           <p className="text-sm text-muted-foreground">
@@ -188,14 +173,19 @@ export function ServerTable({ query }: { query?: Record<string, string> }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {offset + 1}–{offset + (data?.data?.length || 0)} servers
+          {total > 0 ? (
+            <>Showing {startItem}–{endItem} of {total.toLocaleString()} servers</>
+          ) : (
+            <>No servers found</>
+          )}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" role="navigation" aria-label="Server list pagination">
           <Button
             variant="outline"
             size="sm"
             disabled={!hasPrevPage}
             onClick={() => setPage((p) => p - 1)}
+            aria-label="Go to previous page"
           >
             Previous
           </Button>
@@ -204,13 +194,14 @@ export function ServerTable({ query }: { query?: Record<string, string> }) {
             size="sm"
             disabled={!hasNextPage}
             onClick={() => setPage((p) => p + 1)}
+            aria-label="Go to next page"
           >
             Next
           </Button>
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/60 overflow-hidden">
+      <div className="rounded-2xl border border-foreground/10 bg-white/80 overflow-hidden shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -243,23 +234,25 @@ export function ServerTable({ query }: { query?: Record<string, string> }) {
       </div>
 
       {(hasPrevPage || hasNextPage) && (
-        <div className="flex items-center justify-center gap-2 pt-2">
+        <div className="flex items-center justify-center gap-2 pt-2" role="navigation" aria-label="Table pagination controls">
           <Button
             variant="ghost"
             size="sm"
             disabled={!hasPrevPage}
             onClick={() => setPage((p) => p - 1)}
+            aria-label="Go to previous page"
           >
             ← Previous
           </Button>
-          <span className="text-sm text-muted-foreground px-4">
-            Page {page + 1}
+          <span className="text-sm text-muted-foreground px-4" aria-live="polite" aria-atomic="true">
+            Page {currentPage} of {totalPages > 0 ? totalPages : 1}
           </span>
           <Button
             variant="ghost"
             size="sm"
             disabled={!hasNextPage}
             onClick={() => setPage((p) => p + 1)}
+            aria-label="Go to next page"
           >
             Next →
           </Button>
